@@ -103,6 +103,36 @@ If you need to enter bootloader mode manually:
 sudo stty -F /dev/ttyACM0 1200
 ```
 
+### GitHub Actions CI/CD
+
+The repository includes GitHub Actions workflows that automatically build the firmware:
+
+#### Build Workflow
+
+On every push or pull request, the workflow builds both `pico` and `pico2` environments. Build artifacts (`.uf2`, `.bin`, `.elf` files) are available for download:
+
+1. Go to the **Actions** tab in GitHub
+2. Click on the latest workflow run
+3. Scroll down to the **Artifacts** section
+4. Download the `firmware` artifact (contains builds for both environments)
+5. Artifacts are retained for 7 days
+
+#### Creating a Release
+
+To create a GitHub release with firmware files attached:
+
+1. Go to **Releases** → **Draft a new release**
+2. Create a new tag (e.g., `v1.0.0`) or select an existing tag
+3. Fill in the release title and description
+4. Click **Publish release**
+
+The release workflow will automatically:
+- Build both `pico` and `pico2` environments
+- Attach the `.uf2` firmware files to the release
+- Files will be named `firmware-pico.uf2` and `firmware-pico2.uf2`
+
+You can then download the firmware directly from the release page and flash it to your Pico by dragging the `.uf2` file to the mounted drive.
+
 ## Usage
 
 ### Serial CLI Interface

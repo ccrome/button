@@ -25,8 +25,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install platformio
         
-    - name: Build project
+    - name: Build pico environment
       run: pio run -e pico
+      
+    - name: Build pico2 environment
+      run: pio run -e pico2
       
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -36,5 +39,8 @@ jobs:
           .pio/build/pico/*.uf2
           .pio/build/pico/*.bin
           .pio/build/pico/*.elf
+          .pio/build/pico2/*.uf2
+          .pio/build/pico2/*.bin
+          .pio/build/pico2/*.elf
         retention-days: 7
 
