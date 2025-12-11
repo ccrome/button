@@ -247,6 +247,151 @@
             padding-top: 12px;
             padding-bottom: 12px;
         }
+
+        /* Help / examples modal */
+        .help-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .help-row button {
+            width: 100%;
+        }
+
+        .btn-tertiary {
+            background: #f0f0f0;
+            color: #444;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-tertiary:hover:not(:disabled) {
+            background: #e9e9e9;
+            transform: translateY(-2px);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 760px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .modal-body {
+            padding: 18px 20px 20px 20px;
+            max-height: 75vh;
+            overflow: auto;
+        }
+
+        .help-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .help-section h3 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .help-section p {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .help-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+            background: #f7f7f9;
+            border: 1px solid #e9e9ef;
+            border-radius: 10px;
+            padding: 12px;
+            overflow-x: auto;
+            white-space: pre;
+            color: #222;
+        }
+
+        .example-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .example {
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 12px;
+            background: #fff;
+        }
+
+        .example-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .example-title strong {
+            font-size: 13px;
+            color: #333;
+        }
+
+        .example button {
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            letter-spacing: 0.2px;
+            text-transform: none;
+        }
     </style>
 </head>
 <body>
@@ -255,6 +400,10 @@
         
         <div class="connect-button-container">
             <button class="btn-secondary" id="connectBtn">Connect</button>
+        </div>
+
+        <div class="help-row">
+            <button class="btn-tertiary" id="helpBtn">Help / Examples</button>
         </div>
 
         <div class="status">
@@ -270,7 +419,7 @@
 
         <div class="field-group">
             <label for="newValue">New Value</label>
-            <textarea id="newValue" placeholder="Enter new setting value (supports Unicode and multiline)" rows="4"></textarea>
+            <textarea id="newValue" placeholder="Enter new macro (supports non-ASCII text via base64 and multiline)" rows="4"></textarea>
         </div>
 
         <div class="button-group">
@@ -281,6 +430,94 @@
         <div class="message-container">
             <div class="error" id="errorMsg"></div>
             <div class="info" id="infoMsg"></div>
+        </div>
+    </div>
+
+    <!-- Help modal -->
+    <div class="modal-overlay" id="helpOverlay" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <div class="modal-header">
+                <h2 id="helpTitle">Macro syntax (control keys + examples)</h2>
+                <button class="modal-close" id="helpCloseBtn" type="button">Close</button>
+            </div>
+            <div class="modal-body">
+                <div class="help-grid">
+                    <div class="help-section">
+                        <h3>How it works</h3>
+                        <p>
+                            The firmware parses the macro string and sends <strong>key events</strong>. You can mix normal text with special tokens.
+                            If you include non-ASCII characters or literal newlines, the app will send the value using <strong>base64</strong>.
+                        </p>
+                        <div class="help-code">Plain text:
+hello world
+
+Tokens:
+{ENTER} {TAB} {ESC} {BACKSPACE} {DELETE}
+{UP} {DOWN} {LEFT} {RIGHT} {HOME} {END} {PGUP} {PGDN} {INSERT}
+{F1} ... {F24}
+
+Chords (modifiers + key):
+{CTRL+C} {CTRL+SHIFT+ESC} {ALT+F4} {GUI+R}
+
+Caret notation:
+^C  ^[  ^?  ^^
+
+Escapes:
+\n \t \r \b \e \\ \xNN
+
+Literal braces:
+{{  }}</div>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>Quick examples</h3>
+                        <div class="example-list">
+                            <div class="example">
+                                <div class="example-title">
+                                    <strong>Copy / paste with Enter + Ctrl+V</strong>
+                                    <button class="btn-primary" type="button" data-example="Hello\n\n{CTRL+V}{ENTER}">Use</button>
+                                </div>
+                                <div class="help-code">Hello\n\n{CTRL+V}{ENTER}</div>
+                            </div>
+
+                            <div class="example">
+                                <div class="example-title">
+                                    <strong>Interrupt (Ctrl+C)</strong>
+                                    <button class="btn-primary" type="button" data-example="^C">Use</button>
+                                </div>
+                                <div class="help-code">^C</div>
+                            </div>
+
+                            <div class="example">
+                                <div class="example-title">
+                                    <strong>Alt+F4 (close window)</strong>
+                                    <button class="btn-primary" type="button" data-example="{ALT+F4}">Use</button>
+                                </div>
+                                <div class="help-code">{ALT+F4}</div>
+                            </div>
+
+                            <div class="example">
+                                <div class="example-title">
+                                    <strong>Open Run dialog (GUI+R) and type a command</strong>
+                                    <button class="btn-primary" type="button" data-example="{GUI+R}notepad{ENTER}">Use</button>
+                                </div>
+                                <div class="help-code">{GUI+R}notepad{ENTER}</div>
+                            </div>
+
+                            <div class="example">
+                                <div class="example-title">
+                                    <strong>Classic “Konami” arrows</strong>
+                                    <button class="btn-primary" type="button" data-example="{UP}{UP}{DOWN}{DOWN}{LEFT}{RIGHT}{LEFT}{RIGHT}ba{ENTER}">Use</button>
+                                </div>
+                                <div class="help-code">{UP}{UP}{DOWN}{DOWN}{LEFT}{RIGHT}{LEFT}{RIGHT}ba{ENTER}</div>
+                            </div>
+                        </div>
+                        <p style="margin-top:10px;">
+                            Tip: if you want Enter without making the macro “multiline”, use <code>\n</code> instead of an actual newline.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -301,6 +538,28 @@
         const clearBtn = document.getElementById('clearBtn');
         const errorMsg = document.getElementById('errorMsg');
         const infoMsg = document.getElementById('infoMsg');
+        const helpBtn = document.getElementById('helpBtn');
+        const helpOverlay = document.getElementById('helpOverlay');
+        const helpCloseBtn = document.getElementById('helpCloseBtn');
+
+        function openHelp() {
+            helpOverlay.classList.add('show');
+            helpOverlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeHelp() {
+            helpOverlay.classList.remove('show');
+            helpOverlay.setAttribute('aria-hidden', 'true');
+        }
+
+        function applyExample(example) {
+            newValueInput.value = example;
+            newValueInput.focus();
+            // Keep cursor at end for easy edits
+            newValueInput.selectionStart = newValueInput.selectionEnd = newValueInput.value.length;
+            closeHelp();
+            showInfo('Example inserted. Press Program to save.');
+        }
 
         function showError(message) {
             errorMsg.textContent = message;
@@ -480,12 +739,12 @@
 
             try {
                 // Check if value contains non-ASCII characters or newlines
-                const hasUnicode = /[^\x00-\x7F]/.test(value);
+                const hasNonAscii = /[^\x00-\x7F]/.test(value);
                 const hasNewlines = /[\r\n]/.test(value);
                 
-                if (hasUnicode || hasNewlines) {
-                    // Base64 encode the value to avoid CLI parsing issues with spaces/newlines/Unicode
-                    // This allows us to send any Unicode characters and newlines
+                if (hasNonAscii || hasNewlines) {
+                    // Base64 encode the value to avoid CLI parsing issues with spaces/newlines/non-ASCII
+                    // This allows us to send arbitrary bytes (as UTF-8 text) and newlines
                     const encoded = btoa(unescape(encodeURIComponent(value)));
                     await sendCommand('prog base64:' + encoded);
                 } else {
@@ -493,7 +752,7 @@
                     await sendCommand('prog ' + value);
                 }
                 
-                showInfo('Programming value (Unicode supported)');
+                showInfo('Programming value');
                 newValueInput.value = '';
                 
                 // Wait a bit for the device to process, then request updated value
@@ -536,6 +795,28 @@
         connectBtn.addEventListener('click', connectSerial);
         programBtn.addEventListener('click', programValue);
         clearBtn.addEventListener('click', clearValue);
+        helpBtn.addEventListener('click', openHelp);
+        helpCloseBtn.addEventListener('click', closeHelp);
+
+        helpOverlay.addEventListener('click', (e) => {
+            if (e.target === helpOverlay) {
+                closeHelp();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && helpOverlay.classList.contains('show')) {
+                closeHelp();
+            }
+        });
+
+        // Example buttons
+        for (const btn of document.querySelectorAll('[data-example]')) {
+            btn.addEventListener('click', () => {
+                const ex = btn.getAttribute('data-example') || '';
+                applyExample(ex);
+            });
+        }
 
         // Allow Ctrl+Enter (or Cmd+Enter on Mac) to program, Enter creates newline
         newValueInput.addEventListener('keypress', (e) => {

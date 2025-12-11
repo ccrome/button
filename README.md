@@ -10,7 +10,7 @@ A Raspberry Pi Pico-based USB HID keyboard button that types a programmable macr
 - **EEPROM Storage**: Macro is stored in EEPROM and persists across power cycles
 - **Serial CLI**: Command-line interface over USB Serial (CDC) for programming
 - **Web Interface**: Modern web-based UI using Web Serial API for easy configuration
-- **Unicode Support**: Supports Unicode characters and multi-line text via base64 encoding
+- **Base64 Support for Non-ASCII / Newlines**: You can store arbitrary bytes or multi-line values via base64 for safe transport over the CLI/Web Serial
 - **Button Debouncing**: Hardware debouncing using Bounce2 library
 
 ## Hardware Requirements
@@ -140,7 +140,10 @@ You can then download the firmware directly from the release page and flash it t
 Connect to the device via USB Serial (CDC). The device provides a command-line interface with the following commands:
 
 #### `show`
-Display the current macro value. If the macro contains Unicode or newlines, it will be shown as base64-encoded.
+Display the current macro value.
+
+- If the macro contains non-ASCII bytes or literal newlines, it will be shown as base64-encoded (`base64:...`).
+- Otherwise it is printed as a single line using escapes for control keys (so it is safe to copy/paste).
 
 #### `prog <value>`
 Program a new macro value. For ASCII-only text:
@@ -148,7 +151,52 @@ Program a new macro value. For ASCII-only text:
 prog hello world
 ```
 
-For Unicode characters or multi-line text, use base64 encoding:
+#### Macro syntax (control keys, chords, and escapes)
+Your programmed value can include common control signals.
+
+- **Chords** (press modifiers + a key):
+
+```
+prog {CTRL+C}
+prog {CTRL+SHIFT+ESC}
+prog {ALT+F4}
+prog {GUI+R}
+```
+
+- **Named keys**:
+
+```
+prog {ENTER}
+prog {TAB}
+prog {ESC}
+prog {BACKSPACE}
+prog {DELETE}
+prog {UP}{UP}{DOWN}{DOWN}{LEFT}{RIGHT}{LEFT}{RIGHT}
+prog {F5}
+```
+
+- **Caret control notation** (classic terminal style):
+
+```
+prog ^C
+prog ^[
+prog ^?
+```
+
+- **Backslash escapes**:
+
+```
+prog hello\nworld            ; sends Enter between words
+prog one\\t two              ; sends Tab
+prog \\\\                    ; sends a literal backslash
+prog \\x1b                   ; sends Escape
+```
+
+Notes:
+- **Use `\n` for Enter** if you want a “multi-line” macro without using literal newlines (this keeps it ASCII and avoids base64).
+- To type literal braces, use `{{` for `{` and `}}` for `}`.
+
+For non-ASCII bytes or multi-line text, use base64 encoding:
 ```
 prog base64:aGVsbG8gd29ybGQ=
 ```
@@ -193,12 +241,12 @@ Alternatively, you can open `app/index.html` directly in a compatible browser (C
 
 4. Enter a new value in the text area:
    - Supports multi-line text (press Enter for new lines)
-   - Supports Unicode characters
+   - Supports non-ASCII text (sent via base64)
    - Use Ctrl+Enter (Cmd+Enter on Mac) to program the value
 
 5. Click "Program" to save the new macro, or "Clear" to reset to defaults
 
-6. The web interface automatically handles base64 encoding for Unicode and multi-line content
+6. The web interface automatically handles base64 encoding for non-ASCII and multi-line content
 
 ## Default Macro
 
@@ -231,10 +279,12 @@ struct Config {
 ### Base64 Encoding
 
 When the macro contains:
-- Non-ASCII characters (Unicode)
+- Non-ASCII bytes (for example, extended characters depending on your editor/encoding)
 - Carriage returns or newlines
 
 The device automatically uses base64 encoding for storage and transmission. The web interface handles encoding/decoding transparently.
+
+Note: this device sends **key events**, not Unicode codepoints. If you store text outside basic ASCII, what the host receives depends on the host OS, keyboard layout, and how the core maps characters to key sequences.
 
 ## Troubleshooting
 
