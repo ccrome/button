@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUTTON</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f5f5f5;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-indicator.connected {
+            background: #4caf50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+        }
+
+        .status-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .field-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .current-value {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            min-height: 90px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .current-value.empty {
+            color: #999;
+            font-weight: normal;
+        }
+
+        .base64-info {
+            margin-top: 8px;
+            font-size: 11px;
+            color: #888;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            padding: 6px 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .base64-info.show {
+            display: block;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        textarea {
+            min-height: 100px;
+            line-height: 1.5;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .connect-button-container {
+            margin-bottom: 20px;
+        }
+
+        .connect-button-container button {
+            width: 100%;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .message-container {
+            min-height: 50px;
+            margin-top: 15px;
+        }
+
+        .error {
+            padding: 12px;
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            color: #c33;
+            font-size: 14px;
+            visibility: hidden;
+            opacity: 0;
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+            transition: opacity 0.3s, max-height 0.3s, padding 0.3s;
+        }
+
+        .error.show {
+            visibility: visible;
+            opacity: 1;
+            max-height: 200px;
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+
+        .info {
+            padding: 12px;
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            color: #1976d2;
+            font-size: 14px;
+            visibility: hidden;
+            opacity: 0;
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+            transition: opacity 0.3s, max-height 0.3s, padding 0.3s;
+        }
+
+        .info.show {
+            visibility: visible;
+            opacity: 1;
+            max-height: 200px;
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BUTTON</h1>
+        
+        <div class="connect-button-container">
+            <button class="btn-secondary" id="connectBtn">Connect</button>
+        </div>
+
+        <div class="status">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span class="status-text" id="statusText">Disconnected</span>
+        </div>
+
+        <div class="field-group">
+            <label for="currentValue">Current Value</label>
+            <div class="current-value empty" id="currentValue">--</div>
+            <div class="base64-info" id="base64Info"></div>
+        </div>
+
+        <div class="field-group">
+            <label for="newValue">New Value</label>
+            <textarea id="newValue" placeholder="Enter new setting value (supports Unicode and multiline)" rows="4"></textarea>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" id="programBtn" disabled>Program</button>
+            <button class="btn-danger" id="clearBtn" disabled>Clear</button>
+        </div>
+
+        <div class="message-container">
+            <div class="error" id="errorMsg"></div>
+            <div class="info" id="infoMsg"></div>
+        </div>
+    </div>
+
+    <script>
+        let port = null;
+        let reader = null;
+        let writer = null;
+        let reading = false;
+        let readBuffer = '';
+
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const currentValue = document.getElementById('currentValue');
+        const base64Info = document.getElementById('base64Info');
+        const newValueInput = document.getElementById('newValue');
+        const connectBtn = document.getElementById('connectBtn');
+        const programBtn = document.getElementById('programBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const infoMsg = document.getElementById('infoMsg');
+
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.add('show');
+            setTimeout(() => errorMsg.classList.remove('show'), 5000);
+        }
+
+        function showInfo(message) {
+            infoMsg.textContent = message;
+            infoMsg.classList.add('show');
+            setTimeout(() => infoMsg.classList.remove('show'), 3000);
+        }
+
+        function updateStatus(connected) {
+            if (connected) {
+                statusIndicator.classList.add('connected');
+                statusText.textContent = 'Connected';
+                connectBtn.textContent = 'Disconnect';
+                programBtn.disabled = false;
+                clearBtn.disabled = false;
+            } else {
+                statusIndicator.classList.remove('connected');
+                statusText.textContent = 'Disconnected';
+                connectBtn.textContent = 'Connect';
+                programBtn.disabled = true;
+                clearBtn.disabled = true;
+                currentValue.textContent = '--';
+                currentValue.classList.add('empty');
+                base64Info.classList.remove('show');
+            }
+        }
+
+        async function readFromSerial() {
+            if (!reader) return;
+
+            reading = true;
+            try {
+                while (port && port.readable) {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                        reader.releaseLock();
+                        break;
+                    }
+
+                    // Decode the received data and append to buffer
+                    const text = new TextDecoder().decode(value);
+                    readBuffer += text;
+                    
+                    // Process complete lines (ending with \n)
+                    const lines = readBuffer.split('\n');
+                    // Keep the last incomplete line in the buffer
+                    readBuffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        // Parse "Current: <value>" response from show command
+                        if (line.startsWith('Current: ')) {
+                            let value = line.substring(9); // Remove "Current: " prefix
+                            // Check if it's base64 encoded (starts with "base64:")
+                            if (value.startsWith('base64:')) {
+                                const encoded = value.substring(7); // Remove "base64:" prefix
+                                // Show the raw base64
+                                base64Info.textContent = 'Base64: ' + encoded;
+                                base64Info.classList.add('show');
+                                try {
+                                    value = decodeURIComponent(escape(atob(encoded)));
+                                } catch (e) {
+                                    // Decode failed, show the base64 string as-is
+                                }
+                            } else {
+                                // Not base64 encoded, hide the base64 info
+                                base64Info.classList.remove('show');
+                            }
+                            // Otherwise it's regular ASCII, use as-is
+                            currentValue.textContent = value;
+                            currentValue.classList.remove('empty');
+                        }
+                    }
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Read error:', error);
+                    showError('Error reading from serial port: ' + error.message);
+                }
+            } finally {
+                reading = false;
+            }
+        }
+
+        async function connectSerial() {
+            try {
+                if (port) {
+                    // Disconnect
+                    if (reader) {
+                        await reader.cancel();
+                    }
+                    if (writer) {
+                        writer.releaseLock();
+                    }
+                    await port.close();
+                    port = null;
+                    reader = null;
+                    writer = null;
+                    readBuffer = '';
+                    updateStatus(false);
+                    showInfo('Disconnected from serial port');
+                    return;
+                }
+
+                // Check if Web Serial API is available
+                if (!navigator.serial) {
+                    showError('Web Serial API is not supported in this browser. Please use Chrome, Edge, or Opera.');
+                    return;
+                }
+
+                // Request port access
+                port = await navigator.serial.requestPort();
+                
+                // Open the port with baud rate 9600 (adjust as needed)
+                await port.open({ baudRate: 9600 });
+
+                // Set up reader
+                reader = port.readable.getReader();
+                
+                // Set up writer
+                writer = port.writable.getWriter();
+
+                updateStatus(true);
+                showInfo('Connected to serial port');
+
+                // Start reading
+                readFromSerial();
+
+                // Request current value
+                await sendCommand('show');
+
+            } catch (error) {
+                if (error.name === 'NotFoundError') {
+                    showError('No serial port selected');
+                } else if (error.name === 'SecurityError') {
+                    showError('Permission denied. Please allow serial port access.');
+                } else {
+                    showError('Connection error: ' + error.message);
+                }
+                port = null;
+                reader = null;
+                writer = null;
+                readBuffer = '';
+                updateStatus(false);
+            }
+        }
+
+        async function sendCommand(command) {
+            if (!writer) {
+                showError('Not connected to serial port');
+                return;
+            }
+
+            try {
+                const data = new TextEncoder().encode(command + '\n');
+                await writer.write(data);
+            } catch (error) {
+                showError('Error sending command: ' + error.message);
+            }
+        }
+
+        async function programValue() {
+            if (!writer) {
+                showError('Not connected to serial port');
+                return;
+            }
+
+            const value = newValueInput.value;
+            if (!value.trim()) {
+                showError('Please enter a value to program');
+                return;
+            }
+
+            try {
+                // Check if value contains non-ASCII characters or newlines
+                const hasUnicode = /[^\x00-\x7F]/.test(value);
+                const hasNewlines = /[\r\n]/.test(value);
+                
+                if (hasUnicode || hasNewlines) {
+                    // Base64 encode the value to avoid CLI parsing issues with spaces/newlines/Unicode
+                    // This allows us to send any Unicode characters and newlines
+                    const encoded = btoa(unescape(encodeURIComponent(value)));
+                    await sendCommand('prog base64:' + encoded);
+                } else {
+                    // Regular ASCII - send as-is
+                    await sendCommand('prog ' + value);
+                }
+                
+                showInfo('Programming value (Unicode supported)');
+                newValueInput.value = '';
+                
+                // Wait a bit for the device to process, then request updated value
+                setTimeout(async () => {
+                    await sendCommand('show');
+                }, 500);
+
+            } catch (error) {
+                showError('Error sending value: ' + error.message);
+            }
+        }
+
+        async function clearValue() {
+            if (!writer) {
+                showError('Not connected to serial port');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to clear and reset to defaults?')) {
+                return;
+            }
+
+            try {
+                // Send the clear command
+                await sendCommand('clear');
+                
+                showInfo('Clearing EEPROM and resetting to defaults...');
+                
+                // Wait a bit for the device to process, then request updated value
+                setTimeout(async () => {
+                    await sendCommand('show');
+                }, 500);
+
+            } catch (error) {
+                showError('Error clearing: ' + error.message);
+            }
+        }
+
+        // Event listeners
+        connectBtn.addEventListener('click', connectSerial);
+        programBtn.addEventListener('click', programValue);
+        clearBtn.addEventListener('click', clearValue);
+
+        // Allow Ctrl+Enter (or Cmd+Enter on Mac) to program, Enter creates newline
+        newValueInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !programBtn.disabled) {
+                e.preventDefault();
+                programValue();
+            }
+            // Allow Enter to create newlines by default
+        });
+
+        // Handle port disconnect
+        if (navigator.serial) {
+            navigator.serial.addEventListener('connect', (e) => {
+                console.log('Port connected:', e.target);
+            });
+
+            navigator.serial.addEventListener('disconnect', (e) => {
+                console.log('Port disconnected:', e.target);
+                if (port === e.target) {
+                    port = null;
+                    reader = null;
+                    writer = null;
+                    updateStatus(false);
+                    showError('Serial port was disconnected');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

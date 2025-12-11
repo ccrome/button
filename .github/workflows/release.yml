@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install PlatformIO Core
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+        
+    - name: Build pico environment
+      run: pio run -e pico
+      
+    - name: Build pico2 environment
+      run: pio run -e pico2
+      
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        # Copy and rename pico firmware
+        if ls .pio/build/pico/*.uf2 1> /dev/null 2>&1; then
+          cp .pio/build/pico/*.uf2 release-assets/firmware-pico.uf2
+        fi
+        # Copy and rename pico2 firmware
+        if ls .pio/build/pico2/*.uf2 1> /dev/null 2>&1; then
+          cp .pio/build/pico2/*.uf2 release-assets/firmware-pico2.uf2
+        fi
+        
+    - name: Upload release assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release-assets/*.uf2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
