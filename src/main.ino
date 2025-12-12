@@ -11,6 +11,8 @@ Bounce debouncer = Bounce();
 #define MAGIC 0xDEADBEEF
 #define MAX_MACRO_LEN 1000
 #define EEPROM_SIZE 2048 /* arbitrary... but plenty big */
+#define LONG_PRESS_MS 500  // Threshold for long press in milliseconds
+#define EXTRA_LONG_PRESS_MS 10000  // Threshold for extra long press (bootloader mode) in milliseconds
 struct Config {
     uint32_t magic;
     char macro[MAX_MACRO_LEN];
@@ -20,6 +22,8 @@ void eeprom_clear();
 
 Config cfg;
 EmbeddedCli *cli;
+unsigned long buttonPressTime = 0;
+bool buttonPressed = false;
 
 // ---------------------------
 // Macro parser / encoder
@@ -647,15 +651,46 @@ void setup() {
 
 void loop() {
     debouncer.update();
+    
     if (debouncer.fell()) {
 	Serial.println("Pressed");
-	digitalWrite(LED_BUILTIN, HIGH);  // Turn LED on when sending
-        send_macro(cfg.macro);
+	buttonPressTime = millis();
+	buttonPressed = true;
+	digitalWrite(LED_BUILTIN, HIGH);
     }
+    
     if (debouncer.rose()) {
 	Serial.println("Released");
-	digitalWrite(LED_BUILTIN, LOW);  // Turn LED on when sending
+	digitalWrite(LED_BUILTIN, LOW);
+	
+	if (buttonPressed) {
+	    unsigned long pressDuration = millis() - buttonPressTime;
+	    
+	    if (pressDuration < LONG_PRESS_MS) {
+		// Short press: send macro
+		Serial.println("Short press - sending macro");
+		send_macro(cfg.macro);
+	    } else if (pressDuration < EXTRA_LONG_PRESS_MS) {
+		// Long press: open URL (Ctrl+L opens address bar in most browsers)
+		Serial.println("Long press - opening URL");
+		uint8_t mods[] = { KEY_LEFT_CTRL };
+		keyboard_chord(mods, 1, (uint8_t)'l');
+		delay(100);  // Small delay to ensure address bar opens
+		// Type the URL (you can customize this)
+		Keyboard.print("https://ccrome.github.io/button");
+		delay(50);
+		keyboard_tap(KEY_RETURN);
+	    } else {
+		// Extra long press: enter bootloader mode
+		Serial.println("Extra long press - entering bootloader mode");
+		delay(100);  // Small delay to ensure message is sent
+		rp2040.rebootToBootloader();
+	    }
+	    
+	    buttonPressed = false;
+	}
     }
+    
     // provide all chars to cli
     while (Serial.available() > 0) {
         embeddedCliReceiveChar(cli, Serial.read());

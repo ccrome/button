@@ -513,8 +513,28 @@ Literal braces:
                             </div>
                         </div>
                         <p style="margin-top:10px;">
-                            Tip: if you want Enter without making the macro “multiline”, use <code>\n</code> instead of an actual newline.
+                            Tip: if you want Enter without making the macro "multiline", use <code>\n</code> instead of an actual newline.
                         </p>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>Button Press Behaviors</h3>
+                        <p>
+                            The button supports three different press durations, each triggering a different action:
+                        </p>
+                        <div class="help-code"><strong>Short Press</strong> (&lt; 0.5 seconds)
+Sends the programmed macro. This is the default behavior for quick button presses.
+
+<strong>Long Press</strong> (0.5 - 10 seconds)
+Opens the web interface URL in your browser. The button will:
+  1. Press Ctrl+L to open the browser address bar
+  2. Type https://ccrome.github.io/button
+  3. Press Enter to navigate
+
+<strong>Extra Long Press</strong> (≥ 10 seconds)
+Enters bootloader mode. This is useful for updating firmware without manually entering bootloader mode. The device will reboot into bootloader mode, allowing you to flash new firmware.
+
+<strong>Note:</strong> The button must be released for the action to trigger. The duration is measured from when the button is pressed until it is released.</div>
                     </div>
                 </div>
             </div>

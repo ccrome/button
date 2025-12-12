@@ -135,6 +135,21 @@ You can then download the firmware directly from the release page and flash it t
 
 ## Usage
 
+### Button Press Behaviors
+
+The button supports three different press durations, each triggering a different action:
+
+- **Short Press** (< 0.5 seconds): Sends the programmed macro. This is the default behavior for quick button presses.
+
+- **Long Press** (0.5 - 10 seconds): Opens the web interface URL in your browser. The button will:
+  1. Press Ctrl+L to open the browser address bar
+  2. Type `https://ccrome.github.io/button`
+  3. Press Enter to navigate
+
+- **Extra Long Press** (≥ 10 seconds): Enters bootloader mode. This is useful for updating firmware without manually entering bootloader mode. The device will reboot into bootloader mode, allowing you to flash new firmware.
+
+**Note:** The button must be released for the action to trigger. The duration is measured from when the button is pressed until it is released.
+
 ### Serial CLI Interface
 
 Connect to the device via USB Serial (CDC). The device provides a command-line interface with the following commands:
@@ -205,6 +220,8 @@ prog base64:aGVsbG8gd29ybGQ=
 Reset the EEPROM to default values and restore the default macro.
 
 ### Web Interface
+
+**Quick Link:** The web interface is available at [https://ccrome.github.io/button](https://ccrome.github.io/button)
 
 #### Using GitHub Pages
 
