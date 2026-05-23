@@ -2,6 +2,7 @@
 #include <Keyboard.h>
 #include <Bounce2.h>
 #include <EEPROM.h>
+#include <hardware/structs/watchdog.h>
 #define EMBEDDED_CLI_IMPL
 #include "embedded_cli.h"
 #define DEFAULT_STRING "Hello World!"
@@ -13,6 +14,7 @@ Bounce debouncer = Bounce();
 #define EEPROM_SIZE 2048 /* arbitrary... but plenty big */
 #define LONG_PRESS_MS 500  // Threshold for long press in milliseconds
 #define EXTRA_LONG_PRESS_MS 10000  // Threshold for extra long press (bootloader mode) in milliseconds
+#define CONFIG_MODE_MAGIC 0x43464731u
 struct Config {
     uint32_t magic;
     char macro[MAX_MACRO_LEN];
@@ -24,6 +26,46 @@ Config cfg;
 EmbeddedCli *cli;
 unsigned long buttonPressTime = 0;
 bool buttonPressed = false;
+bool configMode = false;
+
+static bool serial_enabled() {
+    return configMode;
+}
+
+static void serial_begin_if_needed() {
+    if (serial_enabled()) {
+        Serial.begin(115200);
+    }
+}
+
+static void serial_print_if_enabled(const char *msg) {
+    if (serial_enabled()) {
+        Serial.print(msg);
+    }
+}
+
+static void serial_println_if_enabled(const char *msg) {
+    if (serial_enabled()) {
+        Serial.println(msg);
+    }
+}
+
+static void serial_println_if_enabled(const __FlashStringHelper *msg) {
+    if (serial_enabled()) {
+        Serial.println(msg);
+    }
+}
+
+static void request_config_mode_reboot() {
+    watchdog_hw->scratch[0] = CONFIG_MODE_MAGIC;
+    rp2040.reboot();
+}
+
+static bool consume_config_mode_request() {
+    const bool requested = watchdog_hw->scratch[0] == CONFIG_MODE_MAGIC;
+    watchdog_hw->scratch[0] = 0;
+    return requested;
+}
 
 // ---------------------------
 // Macro parser / encoder
@@ -152,6 +194,9 @@ static void send_ctrl_char(uint8_t c) {
 }
 
 static void serial_print_encoded_macro(const char *s) {
+    if (!serial_enabled()) {
+        return;
+    }
     for (size_t i = 0; s[i] != '\0'; i++) {
         const uint8_t c = (uint8_t)s[i];
         // Keep backslashes as-is so users can round-trip macro escape sequences like "\n"
@@ -483,10 +528,17 @@ void base64_encode(const char *input, int input_len, char *output, int output_le
 
 void cli_write_char(EmbeddedCli *embeddedCli, char c)
 {
-    Serial.print(c);
+    (void) embeddedCli;
+    if (serial_enabled()) {
+        Serial.print(c);
+    }
 }
 
 void cli_on_command(EmbeddedCli *embeddedCli, CliCommand *command) {
+    (void) embeddedCli;
+    if (!serial_enabled()) {
+        return;
+    }
     Serial.println(F("Received command:"));
     Serial.println(command->name);
     embeddedCliTokenizeArgs(command->args);
@@ -498,6 +550,12 @@ void cli_on_command(EmbeddedCli *embeddedCli, CliCommand *command) {
     }
 }
 void cli_show(EmbeddedCli *cli, char *args, void *context) {
+    (void) cli;
+    (void) args;
+    (void) context;
+    if (!serial_enabled()) {
+        return;
+    }
     Serial.print("Current: ");
     
     // Check if macro contains non-ASCII characters or newlines
@@ -526,6 +584,11 @@ void cli_show(EmbeddedCli *cli, char *args, void *context) {
 }
 
 void cli_prog(EmbeddedCli *cli, char *args, void *context) {
+    (void) cli;
+    (void) context;
+    if (!serial_enabled()) {
+        return;
+    }
     // args already contains the raw argument string (everything after "prog ")
     if (args == NULL || strlen(args) == 0) {
 	Serial.println("Usage:  prog <value> or prog base64:<encoded-value>");
@@ -564,8 +627,26 @@ void cli_prog(EmbeddedCli *cli, char *args, void *context) {
 }
 
 void cli_default(EmbeddedCli *cli, char *args, void *context) {
+    (void) cli;
+    (void) args;
+    (void) context;
+    if (!serial_enabled()) {
+        return;
+    }
     Serial.println("Resetting EEPROM to defaults");
     eeprom_clear();
+}
+
+void cli_reboot(EmbeddedCli *cli, char *args, void *context) {
+    (void) cli;
+    (void) args;
+    (void) context;
+    if (!serial_enabled()) {
+        return;
+    }
+    Serial.println("Rebooting to keyboard mode");
+    Serial.flush();
+    rp2040.reboot();
 }
 
 void cli_init() {
@@ -609,6 +690,16 @@ void cli_init() {
 	    cli_default,
 	});
 
+    embeddedCliAddBinding(
+	cli,
+	{
+	    "reboot",
+	    "Reboot back to keyboard mode",
+	    false,
+	    NULL,
+	    cli_reboot,
+	});
+
     
 }
 
@@ -623,7 +714,7 @@ void eeprom_clear() {
 void eeprom_init() {
     if (sizeof (Config) > EEPROM_SIZE) {
 	while(1) {
-	    Serial.println("ERROR: Config size is too big!");
+	    serial_println_if_enabled("ERROR: Config size is too big!");
 	    digitalWrite(LED_BUILTIN, 1);
 	    delay(100);
 	    digitalWrite(LED_BUILTIN, 0);
@@ -635,32 +726,37 @@ void eeprom_init() {
     if (cfg.magic != MAGIC) {   // uninitialized
 	eeprom_clear();
     } else {
-	Serial.println("Did not Write");
+	serial_println_if_enabled("Did not Write");
     }
 }
 
 void setup() {
+    configMode = consume_config_mode_request();
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
     pinMode(BUTTON, INPUT_PULLUP);
     Keyboard.begin();
+    serial_begin_if_needed();
     debouncer.attach(BUTTON);
     eeprom_init();
-    cli_init();
+    if (configMode) {
+        cli_init();
+        serial_println_if_enabled("Config mode enabled");
+    }
 }
 
 void loop() {
     debouncer.update();
     
     if (debouncer.fell()) {
-	Serial.println("Pressed");
+	serial_println_if_enabled("Pressed");
 	buttonPressTime = millis();
 	buttonPressed = true;
 	digitalWrite(LED_BUILTIN, HIGH);
     }
     
     if (debouncer.rose()) {
-	Serial.println("Released");
+	serial_println_if_enabled("Released");
 	digitalWrite(LED_BUILTIN, LOW);
 	
 	if (buttonPressed) {
@@ -668,21 +764,22 @@ void loop() {
 	    
 	    if (pressDuration < LONG_PRESS_MS) {
 		// Short press: send macro
-		Serial.println("Short press - sending macro");
+		serial_println_if_enabled("Short press - sending macro");
 		send_macro(cfg.macro);
 	    } else if (pressDuration < EXTRA_LONG_PRESS_MS) {
-		// Long press: open URL (Ctrl+L opens address bar in most browsers)
-		Serial.println("Long press - opening URL");
+		// Long press: open the config URL, then reboot into config mode for CDC/Web Serial.
+		serial_println_if_enabled("Long press - opening URL, then entering config mode");
 		uint8_t mods[] = { KEY_LEFT_CTRL };
 		keyboard_chord(mods, 1, (uint8_t)'l');
-		delay(100);  // Small delay to ensure address bar opens
-		// Type the URL (you can customize this)
+		delay(100);
 		Keyboard.print("https://ccrome.github.io/button");
 		delay(50);
 		keyboard_tap(KEY_RETURN);
+		delay(750);
+		request_config_mode_reboot();
 	    } else {
 		// Extra long press: enter bootloader mode
-		Serial.println("Extra long press - entering bootloader mode");
+		serial_println_if_enabled("Extra long press - entering bootloader mode");
 		delay(100);  // Small delay to ensure message is sent
 		rp2040.rebootToBootloader();
 	    }
@@ -692,10 +789,12 @@ void loop() {
     }
     
     // provide all chars to cli
-    while (Serial.available() > 0) {
-        embeddedCliReceiveChar(cli, Serial.read());
-    }
+    if (configMode) {
+        while (Serial.available() > 0) {
+            embeddedCliReceiveChar(cli, Serial.read());
+        }
 
-    embeddedCliProcess(cli);
+        embeddedCliProcess(cli);
+    }
 
 }

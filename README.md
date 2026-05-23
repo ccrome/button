@@ -8,8 +8,8 @@ A Raspberry Pi Pico-based USB HID keyboard button that types a programmable macr
 
 - **USB HID Keyboard**: Acts as a USB keyboard device, typing the programmed macro when the button is pressed
 - **EEPROM Storage**: Macro is stored in EEPROM and persists across power cycles
-- **Serial CLI**: Command-line interface over USB Serial (CDC) for programming
-- **Web Interface**: Modern web-based UI using Web Serial API for easy configuration
+- **Serial CLI**: Command-line interface over USB Serial (CDC) in config mode
+- **Web Interface**: Modern web-based UI using Web Serial API for easy configuration in config mode
 - **Base64 Support for Non-ASCII / Newlines**: You can store arbitrary bytes or multi-line values via base64 for safe transport over the CLI/Web Serial
 - **Button Debouncing**: Hardware debouncing using Bounce2 library
 
@@ -90,14 +90,16 @@ rpi-button/
    pio run -t upload
    ```
 
-5. Monitor serial output (optional):
+5. Enter config mode with a long button press when you need USB Serial / Web Serial access.
+
+6. Monitor serial output (optional):
    ```bash
    pio device monitor
    ```
 
 ### Bootloader Mode
 
-If you need to enter bootloader mode manually:
+If you need to enter bootloader mode manually from config mode:
 
 ```bash
 sudo stty -F /dev/ttyACM0 1200
@@ -141,10 +143,7 @@ The button supports three different press durations, each triggering a different
 
 - **Short Press** (< 0.5 seconds): Sends the programmed macro. This is the default behavior for quick button presses.
 
-- **Long Press** (0.5 - 10 seconds): Opens the web interface URL in your browser. The button will:
-  1. Press Ctrl+L to open the browser address bar
-  2. Type `https://ccrome.github.io/button`
-  3. Press Enter to navigate
+- **Long Press** (0.5 - 10 seconds): Opens `https://ccrome.github.io/button` in your browser, then reboots into config mode, enabling USB Serial (CDC) for the CLI and Web Serial configurator.
 
 - **Extra Long Press** (≥ 10 seconds): Enters bootloader mode. This is useful for updating firmware without manually entering bootloader mode. The device will reboot into bootloader mode, allowing you to flash new firmware.
 
@@ -152,7 +151,7 @@ The button supports three different press durations, each triggering a different
 
 ### Serial CLI Interface
 
-Connect to the device via USB Serial (CDC). The device provides a command-line interface with the following commands:
+Enter config mode with a long press, then connect to the device via USB Serial (CDC). The device provides a command-line interface with the following commands:
 
 #### `show`
 Display the current macro value.
@@ -218,6 +217,9 @@ prog base64:aGVsbG8gd29ybGQ=
 
 #### `clear`
 Reset the EEPROM to default values and restore the default macro.
+
+#### `reboot`
+Exit config mode and reboot back to normal keyboard mode.
 
 ### Web Interface
 
